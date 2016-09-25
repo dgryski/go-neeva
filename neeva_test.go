@@ -2,7 +2,9 @@ package neeva
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
+	"strconv"
 	"testing"
 )
 
@@ -37,5 +39,23 @@ func TestNeeva(t *testing.T) {
 		if got := Hash(tt.input); !bytes.Equal(got, want) {
 			t.Errorf("Hash(%q)=%x, want %x", tt.input, got, want)
 		}
+	}
+}
+
+var buf = make([]byte, 8192)
+
+func BenchmarkNeeva(b *testing.B) {
+	sizes := []int64{8, 16, 40, 64, 1024, 8192}
+	for _, n := range sizes {
+		b.Run(strconv.Itoa(int(n)), func(b *testing.B) { benchmarkNeeva(b, n) })
+	}
+}
+
+var sink uint64
+
+func benchmarkNeeva(b *testing.B, size int64) {
+	b.SetBytes(size)
+	for i := 0; i < b.N; i++ {
+		sink += binary.LittleEndian.Uint64(Hash(buf[:size]))
 	}
 }
